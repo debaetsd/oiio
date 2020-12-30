@@ -54,7 +54,7 @@ elif [[ $TRAVIS == true ]] ; then
 elif [[ $CIRCLECI == true ]] ; then
     export PARALLEL=4
 elif [[ $GITHUB_ACTIONS == true ]] ; then
-    export PARALLEL=4
+    export PARALLEL=1
 fi
 export PARALLEL=${PARALLEL:=4}
 export PAR_MAKEFLAGS=-j${PARALLEL}
