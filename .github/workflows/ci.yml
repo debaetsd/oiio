@@ -326,7 +326,6 @@ jobs:
           CMAKE_GENERATOR: "Visual Studio 16 2019"
           OPENEXR_VERSION: v2.4.1
           SKIP_TESTS: 0
-          DEBUG: 1
         run: |
             source src/build-scripts/ci-startup.bash
             source src/build-scripts/gh-win-installdeps.bash
