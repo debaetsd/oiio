@@ -356,7 +356,7 @@ namespace pvt {
 void
 set_exr_threads()
 {
-    static int exr_threads = 0;  // lives in exrinput.cpp
+    /*static int exr_threads = 0;  // lives in exrinput.cpp
     static spin_mutex exr_threads_mutex;
 
     int oiio_threads = 1;
@@ -373,7 +373,7 @@ set_exr_threads()
     if (exr_threads != oiio_threads) {
         exr_threads = oiio_threads;
         Imf::setGlobalThreadCount(exr_threads);
-    }
+    }*/
 }
 
 }  // namespace pvt
@@ -1726,3 +1726,4 @@ OpenEXRInput::read_native_deep_tiles(int subimage, int miplevel, int xbegin,
 
 
 OIIO_PLUGIN_NAMESPACE_END
+
