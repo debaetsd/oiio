@@ -417,7 +417,7 @@ test_write_over()
     OIIO_CHECK_ASSERT(pixel[0] == 0 && pixel[1] == 1 && pixel[2] == 0);
 
     // Replace the green image with red, under the nose of the ImageBuf.
-    Filesystem::remove("tmp-green.tif");
+    OIIO_CHECK_ASSERT(Filesystem::remove("tmp-green.tif") == true);
     Filesystem::copy("tmp-red.tif", "tmp-green.tif");
 
     // Read the image again -- different ImageBuf.

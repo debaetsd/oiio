@@ -630,6 +630,10 @@ TIFFInput::open(const std::string& name, ImageSpec& newspec,
     return open(name, newspec);
 }
 
+#define WIN_SHARE_DELETE_WORKAROUND 1
+#if defined(_WIN32) && WIN_SHARE_DELETE_WORKAROUND
+#include <fcntl.h>
+#endif
 
 
 bool
@@ -661,7 +665,25 @@ TIFFInput::seek_subimage(int subimage, int miplevel)
     if (!m_tif) {
 #ifdef _WIN32
         std::wstring wfilename = Strutil::utf8_to_utf16(m_filename);
+       
+        // workaround for libtiff not passing FILE_SHARE_DELETE attribute
+        // Without this flag, a process cannot delete files that it has opened (for reading).
+        #if !WIN_SHARE_DELETE_WORKAROUND
         m_tif                  = TIFFOpenW(wfilename.c_str(), "rm");
+        #else
+        int m      = O_RDONLY; /*_TIFFgetMode(mode, module);*/
+        int dwMode = OPEN_EXISTING /*case O_RDONLY:			dwMode = OPEN_EXISTING; break;*/; 
+        HANDLE fd = CreateFileW(wfilename.c_str(),
+            (m == O_RDONLY) ? GENERIC_READ : (GENERIC_READ | GENERIC_WRITE),
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE , NULL, dwMode,
+            (m == O_RDONLY) ? FILE_ATTRIBUTE_READONLY : FILE_ATTRIBUTE_NORMAL,
+            NULL);
+        if (fd != INVALID_HANDLE_VALUE) 
+        {
+            m_tif = TIFFFdOpen((int)fd, "<tiff_oiio_todo>","rm"); /* FIXME: WIN64 cast from pointer to int warning */
+            if (!m_tif) CloseHandle(fd);
+        }
+        #endif
 #else
         m_tif = TIFFOpen(m_filename.c_str(), "rm");
 #endif
