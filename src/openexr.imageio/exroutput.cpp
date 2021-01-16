@@ -13,6 +13,7 @@
 
 #include <OpenImageIO/platform.h>
 
+#include <Imath/ImathPlatform.h>
 #include <OpenEXR/ImfChannelList.h>
 #include <OpenEXR/ImfEnvmap.h>
 #include <OpenEXR/ImfOutputFile.h>

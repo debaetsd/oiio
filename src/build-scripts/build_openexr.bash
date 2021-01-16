@@ -6,7 +6,8 @@
 set -ex
 
 # Which OpenEXR to retrieve, how to build it
-OPENEXR_REPO=${OPENEXR_REPO:=https://github.com/openexr/openexr.git}
+#OPENEXR_REPO=${OPENEXR_REPO:=https://github.com/openexr/openexr.git}
+OPENEXR_REPO=${OPENEXR_REPO:=https://github.com/debaetsd/openexr.git}
 OPENEXR_VERSION=${OPENEXR_VERSION:=v2.4.1}
 
 # Where to install the final results

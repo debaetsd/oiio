@@ -22,6 +22,7 @@ using boost::math::gcd;
 
 #include <OpenImageIO/platform.h>
 
+#include <Imath/ImathPlatform.h>
 #include <OpenEXR/ImfChannelList.h>
 #include <OpenEXR/ImfEnvmap.h>
 #include <OpenEXR/ImfInputFile.h>
@@ -1565,7 +1566,7 @@ OpenEXRInput::fill_missing(int xbegin, int xend, int ybegin, int yend,
                 if (cf == TypeFloat)
                     *(float*)d = v;
                 else if (cf == TypeHalf)
-                    *(half*)d = v;
+                    *(Imath::half*)d = v;
                 d += cf.size();
             }
         }
