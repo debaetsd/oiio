@@ -70,7 +70,7 @@ static inline uint64_t mix(uint64_t h) {
 	return h;
 }
 
-inline uint64_t fasthash64(const void *buf, size_t len, uint64_t seed)
+inline uint64_t fasthash64(const void *buf, size_t len, uint64_t seed=1771)
 {
 	const uint64_t    m = 0x880355f21e6d1965ULL;
 	const uint64_t *pos = (const uint64_t *)buf;
@@ -219,6 +219,7 @@ uint32_t OIIO_API hashword (const uint32_t *key, size_t nwords,
 // Hash a string without pre-known length.  We use the Jenkins
 // one-at-a-time hash (http://en.wikipedia.org/wiki/Jenkins_hash_function),
 // which seems to be a good speed/quality/requirements compromise.
+// Note that this is only returning a 32 bit hash space.
 inline size_t
 strhash (const char *s)
 {
@@ -240,6 +241,7 @@ strhash (const char *s)
 // Hash a string_view.  We use the Jenkins
 // one-at-a-time hash (http://en.wikipedia.org/wiki/Jenkins_hash_function),
 // which seems to be a good speed/quality/requirements compromise.
+// Note that this is only returning a 32 bit hash space.
 inline size_t
 strhash (string_view s)
 {
@@ -300,20 +302,45 @@ namespace farmhash {
 
 
 #if defined(FARMHASH_UINT128_T_DEFINED)
-inline uint64_t Uint128Low64(const uint128_t x) {
-  return static_cast<uint64_t>(x);
+
+OIIO_HOSTDEVICE inline constexpr uint64_t Uint128Low64(const uint128_t x) {
+    return static_cast<uint64_t>(x);
 }
-inline uint64_t Uint128High64(const uint128_t x) {
-  return static_cast<uint64_t>(x >> 64);
+
+OIIO_HOSTDEVICE inline constexpr uint64_t Uint128High64(const uint128_t x) {
+    return static_cast<uint64_t>(x >> 64);
 }
-inline uint128_t Uint128(uint64_t lo, uint64_t hi) {
-  return lo + (((uint128_t)hi) << 64);
+
+OIIO_HOSTDEVICE inline constexpr uint128_t Uint128(uint64_t lo, uint64_t hi) {
+    return lo + (((uint128_t)hi) << 64);
 }
+
+OIIO_HOSTDEVICE inline OIIO_CONSTEXPR14 void
+CopyUint128(uint128_t &dst, const uint128_t src) {
+    dst = src;
+}
+
 #else
+
 typedef std::pair<uint64_t, uint64_t> uint128_t;
-inline uint64_t Uint128Low64(const uint128_t x) { return x.first; }
-inline uint64_t Uint128High64(const uint128_t x) { return x.second; }
-inline uint128_t Uint128(uint64_t lo, uint64_t hi) { return uint128_t(lo, hi); }
+OIIO_HOSTDEVICE inline constexpr uint64_t Uint128Low64(const uint128_t x) {
+    return x.first;
+}
+
+OIIO_HOSTDEVICE inline constexpr uint64_t Uint128High64(const uint128_t x) {
+    return x.second;
+}
+
+OIIO_HOSTDEVICE inline constexpr uint128_t Uint128(uint64_t lo, uint64_t hi) {
+    return uint128_t(lo, hi);
+}
+
+OIIO_HOSTDEVICE inline OIIO_CONSTEXPR14 void
+CopyUint128(uint128_t &dst, const uint128_t src) {
+    dst.first  = src.first;
+    dst.second = src.second;
+
+}
 #endif
 
 
@@ -370,7 +397,7 @@ uint128_t OIIO_API Hash128WithSeed(const char* s, size_t len, uint128_t seed);
 // This is intended to be a reasonably good hash function.
 // May change from time to time, may differ on different platforms, may differ
 // depending on NDEBUG.
-inline uint64_t Hash128to64(uint128_t x) {
+OIIO_HOSTDEVICE inline OIIO_CONSTEXPR14 uint64_t Hash128to64(uint128_t x) {
   // Murmur-inspired hashing.
   const uint64_t kMul = 0x9ddfea08eb382d69ULL;
   uint64_t a = (Uint128Low64(x) ^ Uint128High64(x)) * kMul;
@@ -394,7 +421,7 @@ uint128_t OIIO_API Fingerprint128(const char* s, size_t len);
 
 // This is intended to be a good fingerprinting primitive.
 // See below for more overloads.
-inline uint64_t Fingerprint(uint128_t x) {
+OIIO_HOSTDEVICE inline OIIO_CONSTEXPR14 uint64_t Fingerprint(uint128_t x) {
   // Murmur-inspired hashing.
   const uint64_t kMul = 0x9ddfea08eb382d69ULL;
   uint64_t a = (Uint128Low64(x) ^ Uint128High64(x)) * kMul;
@@ -408,7 +435,7 @@ inline uint64_t Fingerprint(uint128_t x) {
 }
 
 // This is intended to be a good fingerprinting primitive.
-inline uint64_t Fingerprint(uint64_t x) {
+OIIO_HOSTDEVICE inline OIIO_CONSTEXPR14 uint64_t Fingerprint(uint64_t x) {
   // Murmur-inspired hashing.
   const uint64_t kMul = 0x9ddfea08eb382d69ULL;
   uint64_t b = x * kMul;

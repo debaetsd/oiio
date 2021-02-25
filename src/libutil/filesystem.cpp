@@ -99,7 +99,11 @@ Filesystem::filename(const std::string& filepath) noexcept
 {
     // To simplify dealing with platform-specific separators and whatnot,
     // just use the Boost routines:
-    return pathstr(u8path(filepath).filename());
+    try {
+        return pathstr(u8path(filepath).filename());
+    } catch (...) {
+        return filepath;
+    }
 }
 
 
@@ -107,7 +111,11 @@ Filesystem::filename(const std::string& filepath) noexcept
 std::string
 Filesystem::extension(const std::string& filepath, bool include_dot) noexcept
 {
-    std::string s = pathstr(u8path(filepath).extension());
+    std::string s;
+    try {
+        s = pathstr(u8path(filepath).extension());
+    } catch (...) {
+    }
     if (!include_dot && !s.empty() && s[0] == '.')
         s.erase(0, 1);  // erase the first character
     return s;
@@ -118,7 +126,11 @@ Filesystem::extension(const std::string& filepath, bool include_dot) noexcept
 std::string
 Filesystem::parent_path(const std::string& filepath) noexcept
 {
-    return pathstr(u8path(filepath).parent_path());
+    try {
+        return pathstr(u8path(filepath).parent_path());
+    } catch (...) {
+        return filepath;
+    }
 }
 
 
@@ -127,7 +139,23 @@ std::string
 Filesystem::replace_extension(const std::string& filepath,
                               const std::string& new_extension) noexcept
 {
-    return pathstr(u8path(filepath).replace_extension(new_extension));
+    try {
+        return pathstr(u8path(filepath).replace_extension(new_extension));
+    } catch (...) {
+        return filepath;
+    }
+}
+
+
+
+std::string
+Filesystem::generic_filepath(string_view filepath) noexcept
+{
+    try {
+        return pathstr(u8path(filepath).generic_string());
+    } catch (...) {
+        return filepath;
+    }
 }
 
 
@@ -860,11 +888,7 @@ Filesystem::scan_for_matching_filenames(const std::string& pattern_,
     std::string directory = Filesystem::parent_path(pattern);
     if (directory.size() == 0) {
         directory = ".";
-#ifdef _WIN32
-        pattern = ".\\\\" + pattern;
-#else
-        pattern = "./" + pattern;
-#endif
+        pattern   = "./" + pattern;
     }
 
     if (!exists(directory))
@@ -894,8 +918,10 @@ Filesystem::scan_for_matching_filenames(const std::string& pattern_,
         error_code ec;
         for (filesystem::directory_iterator it(u8path(directory), ec), end_it;
              !ec && it != end_it; ++it) {
-            if (filesystem::is_regular(it->path(), ec)) {
-                const std::string f = pathstr(it->path());
+            std::string itpath = Filesystem::generic_filepath(
+                it->path().string());
+            if (filesystem::is_regular(itpath, ec)) {
+                const std::string f = pathstr(itpath);
                 match_results<std::string::const_iterator> frame_match;
                 if (regex_match(f, frame_match, pattern_re)) {
                     std::string thenumber(frame_match[1].first,

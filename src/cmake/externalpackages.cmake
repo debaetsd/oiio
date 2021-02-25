@@ -163,19 +163,39 @@ checked_find_package (GIF
                       VERSION_MIN 4
                       RECOMMEND_MIN 5.0
                       RECOMMEND_MIN_REASON "for stability and thread safety")
+
 # For HEIF/HEIC/AVIF formats
 checked_find_package (Libheif VERSION_MIN 1.3
                       RECOMMEND_MIN 1.7
                       RECOMMEND_MIN_REASON "for AVIF support")
+if (APPLE AND LIBHEIF_VERSION VERSION_GREATER_EQUAL 1.10 AND LIBHEIF_VERSION VERSION_LESS 1.11)
+    message (WARNING "Libheif 1.10 on Apple is known to be broken, disabling libheif support")
+    set (Libheif_FOUND 0)
+endif ()
+
 checked_find_package (LibRaw
                       RECOMMEND_MIN 0.18
                       RECOMMEND_MIN_REASON "for ACES support and better camera metadata"
                       PRINT LibRaw_r_LIBRARIES )
 checked_find_package (OpenJpeg VERSION_MIN 2.0)
+
 checked_find_package (OpenVDB
                       VERSION_MIN 5.0
                       DEPS         TBB
                       DEFINITIONS  -DUSE_OPENVDB=1)
+if (OpenVDB_FOUND AND OpenVDB_VERSION VERSION_GREATER_EQUAL 8.0
+        AND CMAKE_CXX_STANDARD VERSION_LESS 14)
+    set (OpenVDB_FOUND OFF)
+    add_definitions (-UUSE_OPENVDB)
+    message (WARNING
+             "${ColorYellow}OpenVDB 8.0+ requires C++14 or higher (was ${CMAKE_CXX_STANDARD}). "
+             "To build against this OpenVDB ${OpenVDB_VERSION}, you need to set "
+             "build option CMAKE_CXX_STANDARD=14 (or higher). The minimum requirements "
+             "for that are gcc >= 5.1, clang >= 3.5, Apple clang >= 7, icc >= 7, MSVS >= 2017. "
+             "If you must use C++11, you need to build against OpenVDB 7 or earlier. ${ColorReset}")
+    message (STATUS "${ColorRed}Not using OpenVDB -- OpenVDB ${OpenVDB_VERSION} requires C++14 or later. ${ColorReset}")
+endif ()
+
 checked_find_package (PTex)
 checked_find_package (WebP)
 
@@ -257,7 +277,7 @@ endif ()
 
 option (BUILD_FMT_FORCE "Force local download/build of fmt even if installed" OFF)
 option (BUILD_MISSING_FMT "Local download/build of fmt if not installed" ON)
-set (BUILD_FMT_VERSION "7.0.1" CACHE STRING "Preferred fmtlib/fmt version, when downloading/building our own")
+set (BUILD_FMT_VERSION "7.1.3" CACHE STRING "Preferred fmtlib/fmt version, when downloading/building our own")
 
 macro (find_or_download_fmt)
     # If we weren't told to force our own download/build of fmt, look

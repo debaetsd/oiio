@@ -80,7 +80,11 @@ endif ()
 ###########################################################################
 # Turn on more detailed warnings and optionally consider warnings as errors
 #
-option (STOP_ON_WARNING "Stop building if there are any compiler warnings" ON)
+if (${PROJECT_NAME}_SUPPORTED_RELEASE)
+    option (STOP_ON_WARNING "Stop building if there are any compiler warnings" OFF)
+else ()
+    option (STOP_ON_WARNING "Stop building if there are any compiler warnings" ON)
+endif()
 option (EXTRA_WARNINGS "Enable lots of extra pedantic warnings" OFF)
 if (NOT MSVC)
     add_compile_options ("-Wall")
@@ -89,9 +93,9 @@ if (NOT MSVC)
     endif ()
     if (STOP_ON_WARNING OR DEFINED ENV{CI})
         add_compile_options ("-Werror")
-        # N.B. Force CI builds (Travis defines $CI) to use -Werror, even if
-        # STOP_ON_WARNING has been switched off by default, which we may do
-        # in release branches.
+        # N.B. Force CI builds to use -Werror, even if STOP_ON_WARNING has
+        # been switched off by default, which we may do in release
+        # branches.
     endif ()
 endif ()
 
@@ -531,7 +535,7 @@ endif ()
 ###########################################################################
 # Any extra logic to be run only for CI builds goes here.
 #
-if (DEFINED ENV{TRAVIS} OR DEFINED ENV{APPVEYOR} OR DEFINED ENV{CI} OR DEFINED ENV{GITHUB_ACTIONS})
+if (DEFINED ENV{CI} OR DEFINED ENV{GITHUB_ACTIONS})
     add_definitions ("-D${PROJ_NAME}_CI=1" "-DBUILD_CI=1")
     if (APPLE)
         # Keep Mono framework from being incorrectly searched for include

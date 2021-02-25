@@ -105,7 +105,7 @@ if int(os.getenv('TESTSUITE_CLEANUP_ON_SUCCESS', '0')) :
 
 image_extensions = [ ".tif", ".tx", ".exr", ".jpg", ".png", ".rla",
                      ".dpx", ".iff", ".psd", ".bmp", ".fits", ".ico",
-                     ".jp2", ".sgi", ".tga", ".TGA" ]
+                     ".jp2", ".sgi", ".tga", ".TGA", ".zfile" ]
 
 # print ("srcdir = " + srcdir)
 # print ("tmpdir = " + tmpdir)
@@ -136,13 +136,6 @@ else :
     if not os.path.exists("./data") :
         newsymlink (test_source_dir, "./data")
 
-
-# Disable this test on Travis when using leak sanitizer, because the error
-# condition makes a leak we can't stop, but that's ok.
-import os
-if (os.getenv("TRAVIS") and (os.getenv("SANITIZE") in ["leak","address"])
-    and os.path.exists(os.path.join (test_source_dir,"TRAVIS_SKIP_LSAN"))) :
-    sys.exit (0)
 
 if os.getenv("Python_EXECUTABLE") :
     pythonbin = os.getenv("Python_EXECUTABLE")
@@ -296,9 +289,12 @@ def rw_command (dir, filename, testwrite=True, use_oiiotool=False, extraargs="",
 
 
 # Construct a command that will testtex
-def testtex_command (file, extraargs="") :
-    cmd = (oiio_app("testtex") + " " + file + " " + extraargs + " " +
-           redirect + ";\n")
+def testtex_command (file, extraargs="", silent=False, concat=True) :
+    cmd = oiio_app("testtex") + " " + file + " " + extraargs + " "
+    if not silent :
+        cmd += redirect
+    if concat:
+        cmd += " ;\n"
     return cmd
 
 
@@ -393,6 +389,15 @@ def runtest (command, outputs, failureok=0) :
 
     for out in outputs :
         (prefix, extension) = os.path.splitext(out)
+        # On Windows, change line endings of text files to unix style before
+        # comparison to reference output.
+        if (platform.system() == 'Windows' and os.path.exists(out)
+                and extension == '.txt') :
+            os.rename (out, "crlf.txt")
+            os.system ("tr -d '\\r' < crlf.txt > " + out)
+            if os.path.exists('crlf.txt') :
+                os.remove('crlf.txt')
+
         (ok, testfile) = checkref (out, refdirlist)
 
         if ok :
@@ -402,9 +407,6 @@ def runtest (command, outputs, failureok=0) :
             print ("PASS: " + out + " matches " + testfile)
         else :
             err = 1
-            if platform.system() == 'Windows' :
-                os.rename (out, "crlf.txt")
-                os.system ("tr -d '\\r' < crlf.txt > " + out)
             print ("NO MATCH for " + out)
             print ("FAIL " + out)
             if extension == ".txt" :
@@ -444,8 +446,8 @@ with open(os.path.join(test_source_dir,"run.py")) as f:
     exec (code)
 
 # Allow a little more slop for slight pixel differences when in DEBUG
-# mode or when running on remote Travis-CI or Appveyor machines.
-if (os.getenv('TRAVIS') or os.getenv('APPVEYOR') or os.getenv('DEBUG')) :
+# mode or when running on remote CI machines.
+if (os.getenv('CI') or os.getenv('DEBUG')) :
     failthresh *= 2.0
     hardfail *= 2.0
     failpercent *= 2.0

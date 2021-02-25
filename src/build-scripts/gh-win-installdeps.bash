@@ -4,13 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # https://github.com/OpenImageIO/oiio/blob/master/LICENSE.md
 
-if [[ ! -e build/$PLATFORM ]] ; then
-    mkdir -p build/$PLATFORM
-fi
-if [[ ! -e dist/$PLATFORM ]] ; then
-    mkdir -p dist/$PLATFORM
-fi
-
 # DEP_DIR="$PWD/ext/dist"
 DEP_DIR="$PWD/dist/$PLATFORM"
 mkdir -p "$DEP_DIR"
@@ -59,7 +52,7 @@ echo "---------------"
 # vcpkg update
 # 
 # # vcpkg install zlib:x64-windows
-# vcpkg install tiff:x64-windows
+vcpkg install tiff:x64-windows
 # vcpkg install libpng:x64-windows
 # vcpkg install giflib:x64-windows
 vcpkg install freetype:x64-windows
@@ -103,13 +96,15 @@ export ZLIB_ROOT=$PWD/ext/dist
 src/build-scripts/build_libpng.bash
 export PNG_ROOT=$PWD/ext/dist
 
-src/build-scripts/build_libtiff.bash
-export TIFF_ROOT=$PWD/ext/dist
+# We're currently getting libtiff from vcpkg
+#src/build-scripts/build_libtiff.bash
+#export TIFF_ROOT=$PWD/ext/dist
 
-LIBJPEGTURBO_CONFIG_OPTS=-DWITH_SIMD=OFF
-# ^^ because we're too lazy to build nasm
-src/build-scripts/build_libjpeg-turbo.bash
-export JPEGTurbo_ROOT=$PWD/ext/dist
+# We're currently getting jpeg from vcpkg
+# LIBJPEGTURBO_CONFIG_OPTS=-DWITH_SIMD=OFF
+# # ^^ because we're too lazy to build nasm
+# src/build-scripts/build_libjpeg-turbo.bash
+# export JPEGTurbo_ROOT=$PWD/ext/dist
 
 source src/build-scripts/build_pybind11.bash
 #export pybind11_ROOT=$PWD/ext/dist
@@ -125,7 +120,6 @@ echo "CMAKE_PREFIX_PATH = $CMAKE_PREFIX_PATH"
 OPENEXR_CXX_FLAGS=" /W1 /EHsc /DWIN32=1 "
 #OPENEXR_BUILD_TYPE=$CMAKE_BUILD_TYPE
 OPENEXR_INSTALL_DIR=$DEP_DIR
-#OPENEXR_VERSION=v2.4.1
 OPENEXR_VERSION=winthread
 source src/build-scripts/build_openexr.bash
 export PATH="$OPENEXR_INSTALL_DIR/bin:$OPENEXR_INSTALL_DIR/lib:$PATH"
@@ -145,3 +139,6 @@ src/build-scripts/install_test_images.bash
 # export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH;$ILMBASE_ROOT;$OPENEXR_ROOT"
 # source src/build-scripts/build_opencolorio.bash
 
+
+# Save the env for use by other stages
+src/build-scripts/save-env.bash
